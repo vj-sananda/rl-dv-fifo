@@ -1,3 +1,5 @@
+mc_control.dump
+fifo_demo.sv
 __pycache__
 *~
 sim_build
