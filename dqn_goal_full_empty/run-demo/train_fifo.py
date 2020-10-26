@@ -14,6 +14,8 @@ from collections import deque
 import dill
 import sys
 from pprint import pprint as pp
+import torch
+import matplotlib.pyplot as plt
 
 def epsilon_greedy(Q, state, nA, eps):
     """Selects epsilon-greedy action for supplied state.

@@ -18,10 +18,10 @@ from pprint import pprint as pp
 EPISODE_LENGTH = 200
 
 #Number of episodes over which to train
-NUM_EPISODES = 1000
+NUM_EPISODES = 10000
 
 #Size of Action space = 4 : {pop, push}
-nA = 4
+nA = 3
 
 def get_probs(Q_s, epsilon, nA):
     """ obtains the action probabilities corresponding to epsilon-greedy policy """
@@ -63,10 +63,10 @@ async def train_fifo(dut):
         reward = -1
         next_select = select
         if dut.full == 1 and select == 0:
-            reward = 10
+            reward = 100
             next_select = 1
         elif dut.empty == 1 and select == 1:
-            reward = 10
+            reward = 100
             next_select = 0
         return reward,next_select
 
@@ -82,25 +82,27 @@ async def train_fifo(dut):
             method=getattr(self,method_name,lambda :'Invalid')
             return method()
 
+        """
         def action_0(self):
             dut.push <= 0
             dut.pop <= 0
+        """
 
-        def action_1(self):
+        def action_0(self):
             if dut.full == 0:
                 dut.push <= 1
             else:
                 dut.push <= 0
             dut.pop <= 0
 
-        def action_2(self):
+        def action_1(self):
             if dut.empty == 0:
                 dut.pop <= 1
             else:
                 dut.pop <= 0
             dut.push <= 0
 
-        def action_3(self):
+        def action_2(self):
             if dut.full == 0:
                 dut.push <= 1
             else:
@@ -150,48 +152,52 @@ async def train_fifo(dut):
 
         return episode,total_episode_reward
 
-    ACTION_NAME_MAP = { 0: 'NONE', 1:'PUSH' , 2 : 'POP', 3:'BOTH'}
-    async def mc_control(num_episodes, alpha, gamma=1.0, eps_start=1.0, eps_decay=.999, eps_min=0.005):
+    #ACTION_NAME_MAP = { 0: 'NONE', 1:'PUSH' , 2 : 'POP', 3:'BOTH'}
+    ACTION_NAME_MAP = { 0:'PUSH' , 1 : 'POP', 2:'BOTH'}
+    async def mc_control(num_episodes, alpha, gamma=1.0, eps_start=1.0, eps_decay=.99, eps_min=0.005):
         # initialize empty dictionary of arrays
         Q = defaultdict(lambda: np.zeros(nA))
-        policy_best_print = dict((k,ACTION_NAME_MAP[np.argmax(v)]) for k, v in Q.items())
-        policy_best = dict((k,np.argmax(v)) for k, v in Q.items())
+        policy_print = {}
+        new_policy = {}
+        old_policy = {}
+        policy_stable_count = 0
 
         epsilon = eps_start
-        episode_reward_min = 100000
-        episode_reward_max = -10000
+
+        score_history = []
         # loop over episodes
         for i_episode in range(1, num_episodes+1):
 
-
             # monitor progress
             if i_episode % 10 == 0:
-                print("Episode {}/{}, Episode Reward (min={},max={})".format(i_episode, num_episodes,episode_reward_min,episode_reward_max))
+                avg_score = np.mean(score_history)
+                print("Episode {}/{}, Avg Episode Reward {}".format(i_episode, num_episodes,avg_score))
                 print("epsilon = {}".format(epsilon))
-                print("Best Policy")
-                pp(policy_best_print)
+                policy_print = dict((k,ACTION_NAME_MAP[np.argmax(v)]) for k, v in Q.items())
+                pp(policy_print)
+                score_history.clear()
 
             # set the value of epsilon
-            epsilon = 1/i_episode
-            #epsilon = max(epsilon*eps_decay, eps_min)
+            #epsilon = 1/i_episode
+            epsilon = max(epsilon*eps_decay, eps_min)
             # generate an episode by following epsilon-greedy policy
             episode,total_episode_reward = await generate_episode_from_Q(Q, epsilon, nA)
+
+            score_history.append(total_episode_reward)
 
             # update the action-value function estimate using the episode
             Q = update_Q(episode, Q, alpha, gamma)
             #pp(Q)
-            if total_episode_reward > episode_reward_max:
-                episode_reward_max = total_episode_reward
-                policy_best_print = dict((k,ACTION_NAME_MAP[np.argmax(v)]) for k, v in Q.items())
-                policy_best = dict((k,np.argmax(v)) for k, v in Q.items())
-                with open("mc_control.dump","wb") as f:
-                    dill.dump( (policy_best,Q) , f)
-            if total_episode_reward < episode_reward_min:
-                episode_reward_min = total_episode_reward
 
+            new_policy = dict((k,np.argmax(v)) for k, v in Q.items())
+            policy_stable_count += 1 if new_policy == old_policy else 0
+            old_policy = new_policy.copy()
+            if policy_stable_count > 2000:
+                dut._log.info("----- Policy stable for {} episodes".format(policy_stable_count))
+                break
 
         # determine the policy corresponding to the final action-value function estimate
-        return policy_best, Q
+        return new_policy, Q
 
     """
     Create a 2ps period clock on port clk
@@ -204,7 +210,7 @@ async def train_fifo(dut):
     clock = Clock(dut.clk, 2, units="ns")
     cocotb.fork(clock.start())  # Start the clock
 
-    policy, Q  = await mc_control(NUM_EPISODES,0.05)
+    policy, Q  = await mc_control(NUM_EPISODES,0.001)
 
     print(policy)
     print(Q)

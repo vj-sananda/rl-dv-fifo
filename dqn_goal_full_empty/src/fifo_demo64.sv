@@ -4,22 +4,22 @@
 
 module fifo (/*AUTOARG*/
    // Outputs
-   full, empty, dataout, count,
+   full, empty, dataout, count, full_posedge, empty_posedge,
    // Inputs
    clk, rst, push, pop, datain,select,reward
    );
 
    //------------------------------
    parameter width=8;
-   parameter depth=16;
-   parameter log2depth=4;
+   parameter depth=64;
+   parameter log2depth=6;
    //------------------------------
    input     clk,rst;
    input     push,pop,select;
    input reward;
    input [width-1:0] datain;
 
-   output    full,empty;
+   output    full,empty,full_posedge,empty_posedge;
    output [log2depth:0] count;
    output [width-1:0] dataout;
    //------------------------------
@@ -29,19 +29,23 @@ module fifo (/*AUTOARG*/
    integer reward ;
    reg [log2depth-1:0]  rd_ptr,wr_ptr;
    reg [log2depth:0] 	cnt, cnt_d1 ,cnt_w ;
-   reg 			full, empty;
+   reg 			full, empty,full_d1,empty_d1;
+   wire full_posedge, empty_posedge;
 
    wire [log2depth:0] count = cnt_w ;
 
-   /*
    always @(posedge clk)
-     if (cnt_d1 > cnt)
-        assert ( cnt_d1 - cnt >= 1);
+    if (rst) begin
+      full_d1 <= 0;
+      empty_d1 <= 1;
+    end
+    else begin
+      full_d1 <= full;
+      empty_d1 <= empty;
+    end
 
-   always @(posedge clk)
-     if ( cnt > cnt_d1 )
-        assert ( cnt - cnt_d1 >= 1);
-   */
+   assign full_posedge = full &  ~full_d1 ;
+   assign empty_posedge = empty & ~empty_d1;
 
    always @(posedge clk)
      if (rst)
@@ -90,7 +94,7 @@ module fifo (/*AUTOARG*/
        3'b1zz: begin
          cnt_w = 0;
          full = 0;
-         empty = 0;
+         empty = 1;
        end
      endcase // case({push,pop})
 

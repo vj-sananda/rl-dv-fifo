@@ -14,6 +14,10 @@ from collections import deque
 import dill
 import sys
 from pprint import pprint as pp
+import torch
+from dqn_agent import Agent
+
+agent = Agent(state_size=4, action_size=4, seed=0)
 
 def epsilon_greedy(Q, state, nA, eps):
     """Selects epsilon-greedy action for supplied state.
@@ -30,14 +34,6 @@ def epsilon_greedy(Q, state, nA, eps):
     else:                     # otherwise, select an action randomly
         return random.choice(np.arange(nA))
 
-def update_Q_sarsamax(alpha, gamma, Q, state, action, reward, next_state=None):
-    """Returns updated Q-value for the most recent experience."""
-    current = Q[state][action]  # estimate in Q-table (for current state, action pair)
-    Qsa_next = np.max(Q[next_state]) if next_state is not None else 0  # value of next state
-    target = reward + (gamma * Qsa_next)               # construct TD target
-    new_value = current + (alpha * (target - current)) # get updated value
-    return new_value
-
 @cocotb.test()
 async def train_fifo(dut):
     """ Test to collect MC samples for RL training"""
@@ -46,7 +42,7 @@ async def train_fifo(dut):
     EPISODE_LENGTH = 200
 
     #Number of episodes over which to train
-    NUM_EPISODES = 200
+    NUM_EPISODES = 20000
 
     ALPHA = 0.005
 
@@ -111,7 +107,6 @@ async def train_fifo(dut):
             next_filled = 0
         return reward,next_filled
 
-
     """
     def compute_reward(select):
         reward = -1
@@ -172,7 +167,7 @@ async def train_fifo(dut):
 
     ACTION_NAME_MAP = { 0: 'NONE', 1:'PUSH' , 2 : 'POP', 3:'BOTH'}
 
-    async def q_learning(num_episodes, alpha, gamma=1.0, plot_every=100):
+    async def dqn(eps_start=1.0, eps_end=0.01, eps_decay=0.995):
         """Q-Learning - TD Control
 
         Params
@@ -180,25 +175,17 @@ async def train_fifo(dut):
             num_episodes (int): number of episodes to run the algorithm
             alpha (float): learning rate
             gamma (float): discount factor
-            plot_every (int): number of episodes to use when calculating average score
         """
         Q = defaultdict(lambda: np.zeros(nA))  # initialize empty dictionary of arrays
         new_policy = {}
         old_policy = {}
         policy_stable_count = 0
 
-        # monitor performance
-        tmp_scores = deque(maxlen=plot_every)     # deque for keeping track of scores
-        avg_scores = deque(maxlen=NUM_EPISODES)   # average scores over every plot_every episodes
+        scores = []                        # list containing scores from each episode
+        scores_window = deque(maxlen=100)  # last 100 scores
 
         for i_episode in range(1, NUM_EPISODES+1):
 
-            # monitor progress
-            if i_episode % 10 == 0:
-                print("\rEpisode {}/{}".format(i_episode, num_episodes))
-                #sys.stdout.flush()
-                policy_print = dict((k,ACTION_NAME_MAP[np.argmax(v)]) for k, v in Q.items())
-                pp(policy_print)
             score = 0                                              # initialize score
 
             #state = env.reset()                                    # start episode
@@ -215,8 +202,8 @@ async def train_fifo(dut):
             eps = 1.0 / i_episode                                  # set value of epsilon
 
             for _ in range(EPISODE_LENGTH):
-                action = epsilon_greedy(Q, state, nA, eps)         # epsilon-greedy action selection
-                #next_state, reward, done, info = env.step(action)  # take action A, observe R, S'
+
+                action = agent.act(np.array(state,dtype=np.float32), eps)
 
                 s=Switcher()
                 s.do_action(action)
@@ -229,32 +216,26 @@ async def train_fifo(dut):
                 dut.select <= select
                 dut.reward <= reward
 
+
+                done = False
+                agent.step(np.array(state,dtype=np.float32),action,reward,np.array(next_state,dtype=np.float32), done)
+
                 score += reward                                    # add reward to agent's score
-                Q[state][action] = update_Q_sarsamax(alpha, gamma, Q, \
-                                                     state, action, reward, next_state)
                 state = next_state
                 select = next_select
 
-            tmp_scores.append(score)                       # append score
-
-            if (i_episode % plot_every == 0):
-                avg_scores.append(np.mean(tmp_scores))
-
-            new_policy = dict((k,np.argmax(v)) for k, v in Q.items())
-            policy_stable_count += 1 if new_policy == old_policy else 0
-            old_policy = new_policy.copy()
-            if policy_stable_count > 20:
-                dut._log.info("----- Policy stable for {} episodes".format(policy_stable_count))
+            scores_window.append(score)       # save most recent score
+            scores.append(score)              # save most recent score
+            eps = max(eps_end, eps_decay*eps) # decrease epsilon
+            print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
+            if i_episode % 100 == 0:
+                print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
+            if np.mean(scores_window)>=2300.0:
+                print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
+                torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
                 break
 
-        # plot performance
-        #plt.plot(np.linspace(0,num_episodes,len(avg_scores),endpoint=False), np.asarray(avg_scores))
-        #plt.xlabel('Episode Number')
-        #plt.ylabel('Average Reward (Over Next %d Episodes)' % plot_every)
-        #plt.show()
-        # print best 100-episode performance
-        print(('Best Average Reward over %d Episodes: ' % plot_every), np.max(avg_scores))
-        return Q
+        return scores
 
     """
     Create a 2ps period clock on port clk
@@ -267,20 +248,7 @@ async def train_fifo(dut):
     clock = Clock(dut.clk, 2, units="ns")
     cocotb.fork(clock.start())  # Start the clock
 
-    Q  = await q_learning(NUM_EPISODES, ALPHA)
-
-    print("Final Policy")
-    policy_print = dict((k,ACTION_NAME_MAP[np.argmax(v)]) for k, v in Q.items())
-    pp(policy_print)
-
-    # determine the policy corresponding to the final action-value function estimate
-    policy = dict((k,np.argmax(v)) for k, v in Q.items())
-    #print(policy)
-    #print(Q)
-
-    with open("mc_control.dump","wb") as f:
-        dill.dump( (policy,Q) , f)
+    scores  = await dqn()
 
     dut._log.info("End of Training::Finished dumping")
-
     # End of Test
