@@ -180,6 +180,7 @@ async def train_fifo(dut):
         new_policy = {}
         old_policy = {}
         policy_stable_count = 0
+        avg_high_score = -np.inf
 
         scores = []                        # list containing scores from each episode
         scores_window = deque(maxlen=100)  # last 100 scores
@@ -229,8 +230,14 @@ async def train_fifo(dut):
             eps = max(eps_end, eps_decay*eps) # decrease epsilon
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
             if i_episode % 100 == 0:
-                print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
-            if np.mean(scores_window)>=2300.0:
+                #print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
+                if np.mean(scores_window) > avg_high_score:
+                    avg_high_score = np.mean(scores_window)
+                    torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
+                    print(" ->Saved checkpoint")
+                else:
+                    print("")
+            if np.mean(scores_window)>=10000.0:
                 print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
                 torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
                 break

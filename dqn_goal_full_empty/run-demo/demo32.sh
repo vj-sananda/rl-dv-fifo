@@ -24,12 +24,12 @@ echo "Check Waves ..."
 echo ""
 
 read dummy
-echo "+++++++  SARSA-max (Q-Learning) FIFO Agent +++++++"
+echo "+++++++  Deep Q Network FIFO Agent +++++++"
 echo "Press any key to start ..."
 read dummy
 
 make clean
-make MODULE=train_fifo PLUSARGS="+NUM_EPISODES=2000 +EPISODE_LENGTH=400"
+make MODULE=dqn_train_fifo PLUSARGS="+NUM_EPISODES=15000 +EPISODE_LENGTH=400"
 
 echo ""
 echo "Training complete, Run test with Policy learned"

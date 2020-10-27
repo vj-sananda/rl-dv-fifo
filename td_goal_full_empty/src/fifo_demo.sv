@@ -11,8 +11,8 @@ module fifo (/*AUTOARG*/
 
    //------------------------------
    parameter width=8;
-   parameter depth=8;
-   parameter log2depth=3;
+   parameter depth=16;
+   parameter log2depth=4;
    //------------------------------
    input     clk,rst;
    input     push,pop,select;
