@@ -13,16 +13,6 @@ make MODULE=random_fifo EXTRA_ARGS=--trace
 echo "Check Waves ..."
 echo ""
 
-echo "+++++++  Random FIFO Test 2 +++++++"
-echo "Press any key to start ..."
-
-read dummy
-
-make MODULE=random_fifo EXTRA_ARGS=--trace
-
-echo "Check Waves ..."
-echo ""
-
 read dummy
 echo "+++++++  SARSA-max (Q-Learning) FIFO Agent +++++++"
 echo "Press any key to start ..."

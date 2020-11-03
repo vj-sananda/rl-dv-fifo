@@ -36,7 +36,7 @@ def epsilon_greedy(Q, state, nA, eps):
 
 @cocotb.test()
 async def train_fifo(dut):
-    """ Test to collect MC samples for RL training"""
+    """ RL stimulus Agent training using DQN """
 
     #Length of an episode in timesteps
     EPISODE_LENGTH = 200
@@ -53,6 +53,8 @@ async def train_fifo(dut):
     EPS_DECAY = 0.999
 
     EPS_MIN = 0.05
+
+    TARGET_SCORE = 10000
 
     #Size of Action space = 4 : {pop, push}
     nA = 4
@@ -77,6 +79,9 @@ async def train_fifo(dut):
 
     if 'GAMMA' in cocotb.plusargs:
         GAMMA = float(cocotb.plusargs['GAMMA'])
+
+    if 'TARGET_SCORE' in cocotb.plusargs:
+        TARGET_SCORE = float(cocotb.plusargs['TARGET_SCORE'])
 
     for k,v in cocotb.plusargs.items():
         print("{} = {}".format(k,v))
@@ -237,7 +242,7 @@ async def train_fifo(dut):
                     print(" ->Saved checkpoint")
                 else:
                     print("")
-            if np.mean(scores_window)>=10000.0:
+            if np.mean(scores_window)>=TARGET_SCORE:
                 print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
                 torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
                 break
