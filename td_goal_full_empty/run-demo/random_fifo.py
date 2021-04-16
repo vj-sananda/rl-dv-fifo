@@ -114,7 +114,9 @@ async def random_fifo(dut):
     ACTION_NAME_MAP = { 0: 'NONE', 1:'PUSH' , 2 : 'POP', 3:'BOTH'}
 
     async def run_random(nA):
-        """ run simulation based on policy """
+        """ run simulation based on policy 
+            nA : number of Actions
+        """
 
         total_reward = 0
         await reset()
