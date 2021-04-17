@@ -1,1 +1,1 @@
-docker run -it -v /Users/vsananda/projects/rl-dv-fifo:/work siliconbootcamp/verilator-cocotb:latest
+docker run -it -v $PWD/..:/work siliconbootcamp/verilator-cocotb:latest
