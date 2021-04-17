@@ -7,8 +7,8 @@
 3. Clone this repo: git clone https://github.com/vj-sananda/rl-dv-fifo
 4. cd to locally-cloned-directory
 5. Start docker container: 
-   5.1 docker run -it -v $PWD:/work siliconbootcamp/verilator-cocotb:latest
-   5.2 The locally-cloned-directory will be mounted under /work in the docker container
+   * docker run -it -v $PWD:/work siliconbootcamp/verilator-cocotb:latest
+   * The locally-cloned-directory will be mounted under /work in the docker container
 
 ### To run SARSA-Max (Q-Learning) FIFO Example
 1. Within the docker container: cd td_goal_full_empty/run-demo
