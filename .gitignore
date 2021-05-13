@@ -1,4 +1,4 @@
-mc_control.dump
+*.dump
 fifo_demo.sv
 __pycache__
 *~

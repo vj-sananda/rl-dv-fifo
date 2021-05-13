@@ -10,9 +10,9 @@ COCOTB_REDUCED_LOG_FMT=1
 #so clock period will be 2 ps.
 #COCOTB_HDL_TIMEPRECISION = 1us
 
-EXTRA_ARGS += --trace --trace-structs --assert
+#EXTRA_ARGS += --trace --trace-structs --assert
 
-MODULE = test_fifo
+MODULE = train_fifo
 TOPLEVEL = fifo
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

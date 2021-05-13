@@ -1,6 +1,6 @@
 # Reinforcement Learning (RL) in Digital Simulation
 
-## Demo Instructions
+## Instructions to run Examples
 
 1. Install [Docker](https://www.docker.com/products/docker-desktop) 
 2. (Optional): To view waves: Install [GTKWave](http://gtkwave.sourceforge.net) or any viewer for .vcd files
@@ -11,14 +11,14 @@
    * The locally-cloned-directory will be mounted under /work in the docker container
 
 ### To run SARSA-Max (Q-Learning) FIFO Example
-1. Within the docker container: cd td_goal_full_empty/run-demo
-2. ./demo16.sh
+1. Within the docker container: cd td_goal_full_empty
+2. ./run.sh 8   (Argument specifies FIFO depth)
 3. Waves will be dumped in directory from Step 1 above.
 4. You can use GTKWave running locally on your machine to load the vcd file.
 
 ### To run DQN (Deep Q Network) FIFO Example
-1. Within the docker container: cd dqn_goal_full_empty/run-demo
-2. ./demo16.sh
+1. Within the docker container: cd dqn_goal_full_empty
+2. ./run.sh 8   (Argument specifies FIFO depth)
 3. Waves will be dumped in directory from Step 1 above. 
 4. You can use GTKWave running locally on your machine to load the vcd file.
 
@@ -30,3 +30,5 @@
 * pip install torch torchvision
 * pip install BOX2D
 
+#### mc_goal_full_empty : Some prelim work using Monte Carlo
+#### pgr_goal_full_empty: Work in progress. Policy Gradient method (REINFORCE)
