@@ -1,3 +1,6 @@
+# -----------------------------------------------------------
+# From udacity/deep-reinforcement-learning github repository
+# -----------------------------------------------------------
 import numpy as np
 import random
 from collections import namedtuple, deque
