@@ -20,7 +20,7 @@ module fifo (/*AUTOARG*/
    input [width-1:0] datain;
 
    output    full,empty,full_posedge,empty_posedge;
-   output [log2depth+3:0] count;
+   output [log2depth:0] count;
    output [width-1:0] dataout;
    //------------------------------
    reg [width-1:0]    mem[0:depth-1];
@@ -32,12 +32,7 @@ module fifo (/*AUTOARG*/
    reg 			full, empty,full_d1,empty_d1;
    wire full_posedge, empty_posedge;
 
-   wire [log2depth+3:0] count ;
-   assign count[log2depth:0] = cnt_w ;
-   assign count[log2depth+3] = ^cnt_w ;
-   assign count[log2depth+2] = &cnt_w ;
-   assign count[log2depth+1] = |cnt_w ;   
-   
+   wire [log2depth:0] count = cnt_w ;
 
    always @(posedge clk)
     if (rst) begin

@@ -14,6 +14,8 @@ import dill
 import sys
 from pprint import pprint as pp
 
+from rl_fifo_utils import get_state_reward, tick, reset, get_state_reward, Switcher, ACTION_NAME_MAP
+
 #Length of an episode in timesteps
 EPISODE_LENGTH = 200
 
@@ -25,93 +27,16 @@ nA = 4
 
 @cocotb.test()
 async def policy_fifo(dut):
-    """ Test to that runs policy found by training """
+    """ Test that runs policy found by training """
 
-    async def tick(n = 1):
-        for _ in range(n):
-            await RisingEdge(dut.clk)
-
-    async def reset():
-        #dut._log.info("Start reset")
-        dut.rst <= 1 #Assert rst
-        dut.push <= 0
-        dut.pop <= 0
-        await tick(5)
-        dut.rst <= 0 #deassert rst
-        await tick(5)
-        #dut._log.info("End reset")
-
-    def compute_reward(filled):
-        reward = -1
-        next_filled = filled
-        if dut.full == 1 and filled == 0:
-            reward = 100
-            next_filled = 1
-        elif dut.empty == 1 and filled == 1:
-            reward = 100
-            next_filled = 0
-        return reward,next_filled
-
-    """
-    def compute_reward(select):
-        reward = -1
-        next_select = select
-        if dut.full_posedge == 1:
-            reward = 10
-        return reward,next_select
-    """
-
-    def get_state_reward(select):
-        reward,next_select = compute_reward(select)
-        next_state = (next_select, dut.count.value.integer, dut.empty.value.integer, dut.full.value.integer)
-        return next_state,reward,next_select
-
-    #Case like statement to translate action to {pop,push}
-    class Switcher(object):
-        def do_action(self,i):
-            method_name='action_'+str(i)
-            method=getattr(self,method_name,lambda :'Invalid')
-            return method()
-
-        def action_0(self):
-            dut.push <= 0
-            dut.pop <= 0
-
-        def action_1(self):
-            if dut.full == 0:
-                dut.push <= 1
-            else:
-                dut.push <= 0
-            dut.pop <= 0
-
-        def action_2(self):
-            if dut.empty == 0:
-                dut.pop <= 1
-            else:
-                dut.pop <= 0
-            dut.push <= 0
-
-        def action_3(self):
-            if dut.full == 0:
-                dut.push <= 1
-            else:
-                dut.push <= 0
-            if dut.empty == 0:
-                dut.pop <= 1
-            else:
-                dut.pop <= 0
-
-    ACTION_NAME_MAP = { 0: 'NONE', 1:'PUSH' , 2 : 'POP', 3:'BOTH'}
 
     async def run_policy(policy,nA):
         """ run simulation based on policy """
 
         total_reward = 0
-        await reset()
+        await reset(dut)
 
-        select = 0
-        state, reward, next_select = get_state_reward(select)
-        select = next_select
+        state, reward = get_state_reward(dut)
 
         for _ in range(EPISODE_LENGTH):
 
@@ -122,17 +47,16 @@ async def policy_fifo(dut):
                 dut._log.error("No action found in policy for state {}".format(state))
                 action = np.random.choice(np.arange(nA))
 
-            s=Switcher()
+            s=Switcher(dut)
             s.do_action(action)
             #print("state:{} + action:{} ->".format(state,action),end="")
 
-            await tick()
+            await tick(dut)
 
-            next_state,reward,next_select = get_state_reward(select)
+            next_state,reward = get_state_reward(dut)
             #print("\t next_state:{}".format(next_state))
             dut._log.info("reward = {}".format(reward))
 
-            select = next_select
             state = next_state
             total_reward += reward
 
