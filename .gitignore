@@ -1,3 +1,4 @@
+checkpoint.pth
 *.dump
 fifo_demo.sv
 __pycache__
