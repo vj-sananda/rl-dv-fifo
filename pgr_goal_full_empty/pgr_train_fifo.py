@@ -103,27 +103,27 @@ async def train_fifo(dut):
         return reward,next_filled
 
     """
-    def compute_reward(select):
+    def compute_reward(filled):
         reward = -1
-        next_select = select
+        next_filled = filled
         if dut.full_posedge == 1:
             reward = 100
-        return reward,next_select
+        return reward,next_filled
     """
 
     """
-    def compute_reward(select):
+    def compute_reward(filled):
         reward = -1
-        next_select = select
+        next_filled = filled
         if dut.empty_posedge == 1:
             reward = 100
-        return reward,next_select
+        return reward,next_filled
     """
 
-    def get_state_reward(select):
-        reward,next_select = compute_reward(select)
-        next_state = (next_select, dut.count.value.integer, dut.empty.value.integer, dut.full.value.integer)
-        return next_state,reward,next_select
+    def get_state_reward(filled):
+        reward,next_filled = compute_reward(filled)
+        next_state = (next_filled, dut.count.value.integer, dut.empty.value.integer, dut.full.value.integer)
+        return next_state,reward,next_filled
 
     #Case like statement to translate action to {pop,push}
     class Switcher(object):
@@ -190,11 +190,11 @@ async def train_fifo(dut):
             await reset()
 
             total_episode_reward = 0
-            select = 0
-            dut.select = select
-            state, reward, next_select = get_state_reward(select)
+            filled = 0
+            dut.filled = filled
+            state, reward, next_filled = get_state_reward(filled)
             #dut._log.info("Reset state = {}".format(state))
-            select = next_select
+            filled = next_filled
             dut.reward = reward
 
             for _ in range(EPISODE_LENGTH):
@@ -208,9 +208,9 @@ async def train_fifo(dut):
 
                 await tick()
 
-                next_state,reward,next_select = get_state_reward(select)
+                next_state,reward,next_filled = get_state_reward(filled)
                 #print("next_state:{}".format(next_state))
-                dut.select <= select
+                dut.filled <= filled
                 dut.reward <= reward
 
                 done = False
@@ -218,7 +218,7 @@ async def train_fifo(dut):
                 rewards.append(reward)
 
                 state = next_state
-                select = next_select
+                filled = next_filled
 
             scores_deque.append(sum(rewards))
             scores.append(sum(rewards))
