@@ -1,6 +1,6 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
-VERILOG_SOURCES = ../src/fifo_demo.sv
+VERILOG_SOURCES = ../src/fifo.sv
 SIM=verilator
 COCOTB_REDUCED_LOG_FMT=1
 
