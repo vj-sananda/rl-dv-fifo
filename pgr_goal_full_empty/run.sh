@@ -8,7 +8,7 @@ fi
 
 echo "------ FIFO depth of $1 ---------"
 
-echo "+++++++  Deep Q Network FIFO Agent +++++++"
+echo "+++++++  Policy Gradient FIFO Agent +++++++"
 echo "Press any key to start ..."
 read dummy
 
