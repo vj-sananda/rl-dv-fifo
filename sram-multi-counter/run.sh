@@ -12,7 +12,7 @@ echo "Check Waves ..."
 echo ""
 
 read dummy
-echo "+++++++  SARSA-max (Q-Learning) FIFO Agent +++++++"
+echo "+++++++  SARSA-max (Q-Learning) Agent +++++++"
 echo "Press any key to start ..."
 read dummy
 
