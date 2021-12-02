@@ -9,6 +9,7 @@ fi
 echo "------ FIFO depth of $1 ---------"
 
 echo "+++++++  Policy gradients using REINFORCE +++++++"
+
 echo "Press any key to start ..."
 read dummy
 

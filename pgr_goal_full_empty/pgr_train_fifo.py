@@ -91,8 +91,10 @@ async def train_fifo(dut):
             await reset(dut)
 
             total_episode_reward = 0
+
             state, reward = get_state_reward(dut)
             #dut._log.info("Reset state = {}".format(state))
+
             dut.reward = reward
 
             for _ in range(EPISODE_LENGTH):
@@ -108,6 +110,7 @@ async def train_fifo(dut):
 
                 next_state,reward = get_state_reward(dut)
                 #print("next_state:{}".format(next_state))
+
                 dut.reward <= reward
 
                 done = False
