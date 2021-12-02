@@ -30,5 +30,8 @@
 * pip install torch torchvision
 * pip install BOX2D
 
+#### sram-multi-counter : State encoding is a history of past actions. See README in subdirectory
+
+#### pgr_goal_full_empty:  Policy Gradient method (REINFORCE). Slow to learn. Gets to an almost optimal policy. Simplified state vector. Trimmed unecessary bits, that were added to expand the state space with Q-learning and DQN. See src/fifo_pgr.sv
+
 #### mc_goal_full_empty : Some prelim work using Monte Carlo
-#### pgr_goal_full_empty: Work in progress. Policy Gradient method (REINFORCE)

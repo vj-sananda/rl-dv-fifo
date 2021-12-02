@@ -1,6 +1,6 @@
 # This file is public domain, it can be freely copied without restrictions.
 # SPDX-License-Identifier: CC0-1.0
-VERILOG_SOURCES = ../src/fifo_pgr.sv
+VERILOG_SOURCES = ./design.sv
 SIM=verilator
 COCOTB_REDUCED_LOG_FMT=1
 
@@ -10,9 +10,9 @@ COCOTB_REDUCED_LOG_FMT=1
 #so clock period will be 2 ps.
 #COCOTB_HDL_TIMEPRECISION = 1us
 
-#EXTRA_ARGS += --trace --trace-structs --assert
+EXTRA_ARGS += --trace --trace-structs --assert
 
-MODULE = pgr_train_fifo
-TOPLEVEL = fifo
+MODULE = train
+TOPLEVEL = sram_multi_counter
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

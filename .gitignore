@@ -1,4 +1,4 @@
-checkpoint.pth
+*/checkpoint.pth
 *.dump
 fifo_demo.sv
 __pycache__
@@ -8,3 +8,4 @@ results.xml
 *.vcd
 *.dump
 *.log
+*.ipynb_checkpoints

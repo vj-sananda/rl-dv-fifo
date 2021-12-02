@@ -10,15 +10,11 @@ from cocotb.triggers import RisingEdge
 from cocotb.triggers import Join
 import numpy as np
 from collections import defaultdict
-from collections import deque
 import dill
 import sys
 from pprint import pprint as pp
-import torch
-import torch.optim as optim
-from policy_network import Policy
 
-from rl_fifo_utils import get_state_reward, tick, reset, get_state_reward, Switcher, ACTION_NAME_MAP
+from rl_utils import get_state_reward, tick, reset, get_state_reward, Switcher, ACTION_NAME_MAP, initialize_counters, initialize_inputs
 
 #Length of an episode in timesteps
 EPISODE_LENGTH = 200
@@ -26,28 +22,32 @@ EPISODE_LENGTH = 200
 #Number of episodes over which to train
 NUM_EPISODES = 1000
 
-#Size of Action space = 4 : {pop, push}
-nA = 4
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-policy = Policy().to(device)
+#Size of Action space = 6
+nA = 6
 
 @cocotb.test()
-async def policy_fifo(dut):
-    """ Test to that runs policy found by training """
+async def policy(dut):
+    """ Test that runs policy found by training """
 
-    async def run_policy(agent):
+
+    async def run_policy(policy,nA):
         """ run simulation based on policy """
 
         total_reward = 0
+        await initialize_inputs(dut)
         await reset(dut)
+        await initialize_counters(dut)
 
         state, reward = get_state_reward(dut)
- 
+
         for _ in range(EPISODE_LENGTH):
 
-            action,_ = agent.act(np.array(state,dtype=np.float32))
+            if state in policy:
+                action = policy[state]
+                dut._log.info("For state:{} => {}".format(state,ACTION_NAME_MAP[action]))
+            else:
+                dut._log.error("No action found in policy for state {}".format(state))
+                action = np.random.choice(np.arange(nA))
 
             s=Switcher(dut)
             s.do_action(action)
@@ -72,12 +72,15 @@ async def policy_fifo(dut):
     2 ps clock :  2.61 sec
     2 ns clock : 17.14 sec
     """
-    clock = Clock(dut.clk, 2, units="ns")
+    clock = Clock(dut.clk, 10, units="ns")
     cocotb.fork(clock.start())  # Start the clock
 
-    #Load weights of trained policy network
-    policy.load_state_dict(torch.load('checkpoint.pth'))
+    with open("policy.dump","rb") as f:
+        (policy,Q) = dill.load(f)
 
-    total_reward = await run_policy(policy)
+    pp(policy)
+    pp(Q)
+
+    total_reward = await run_policy(policy,nA)
 
     dut._log.info('Total reward = {}'.format(total_reward))
