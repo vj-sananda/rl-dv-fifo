@@ -3,7 +3,7 @@
 In this example the state is encoded as the history of past actions.
 Does this state encoding allow the agent to learn ?
 
-### SRAM-Multi-Counter
+![s0](../images/sram-multi-counter-image.jpg)
 
 Simple 2 stage pipeline with commands to
 load,increment,decrement,clear and read count values stored in SRAM.
@@ -14,6 +14,8 @@ counter. This requires data forwarding logic.
 
 Goal is to have this logic fire on and off as many times as possible.
 Signal used is hazard_p1.
+
+![s1](../images/sram-multi-counter-goal.jpg)
 
 ## Instructions to run:
 
