@@ -1,5 +1,9 @@
 # Reinforcement Learning (RL) in Digital Simulation
 
+![s0](./images/fifo-case-study.jpg)
+
+![s1](./images/fifo-goal-function.jpg)
+
 ## Instructions to run Examples
 
 1. Install [Docker](https://www.docker.com/products/docker-desktop) 
